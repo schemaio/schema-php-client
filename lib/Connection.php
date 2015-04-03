@@ -51,10 +51,8 @@ class Connection
      * @param  string $host
      * @param  string $port
      */
-    public function __construct($host, $port, $options = null)
+    public function __construct($options = null)
     {
-        $this->host = $host;
-        $this->port = $port;
         $this->options = $options ?: array();
         $this->connected = false;
     }
@@ -66,6 +64,9 @@ class Connection
      */
     public function connect()
     {
+        $this->host = $this->options['host'];
+        $this->port = $this->options['port'];
+        
         if ($this->options['clear']) {
             $this->stream = stream_socket_client(
                 "tcp://{$this->host}:{$this->port}", $error, $error_msg, 10

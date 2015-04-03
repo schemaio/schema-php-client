@@ -103,13 +103,11 @@ class Client
             'cache' => isset($options['cache']) ? $options['cache'] : null
         );
 
-        $this->server = new Connection(
-            $this->params['host'],
-            $this->params['port'],
-            array(
-                'verify_cert' => $this->params['verify_cert']
-            )
-        );
+        $this->server = new Connection(array(
+            'host' => $this->params['host'],
+            'port' => $this->params['port'],
+            'verify_cert' => $this->params['verify_cert']
+        ));
     }
 
     /**
@@ -240,6 +238,7 @@ class Client
         );
         if (is_array($this->params['proxy'])) {
             $this->server->options['clear'] = true;
+            $this->server->options['port'] = 8880;
             $this->server->host = isset($this->params['proxy']['host'])
                 ? $this->params['proxy']['host'] : $this->params['host'];
             $this->server->port = isset($this->params['proxy']['port'])
