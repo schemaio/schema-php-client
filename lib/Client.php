@@ -76,9 +76,10 @@ class Client
                 $client_key = $options['key'];
             }
         }
-
-        if (isset($options['session']) && $options['session']) {
-            $options['session'] = session_id();
+        if (!isset($options['session']) || $options['session']) {
+            if (!is_string($options['session'])) {
+                $options['session'] = session_id();
+            }
         }
         if (isset($options['rescue']) && $options['rescue'] !== false) {
             $options['rescue'] = array(
@@ -95,7 +96,7 @@ class Client
             'port' => isset($options['port']) ? $options['port'] : self::$default_port,
             'verify_cert' => isset($options['verify_cert']) ? $options['verify_cert'] : true,
             'version' => isset($options['version']) ? $options['version'] : 1,
-            'session' =>isset($options['session']) ? $options['session'] : null,
+            'session' => isset($options['session']) ? $options['session'] : null,
             'rescue' => isset($options['rescue']) ? $options['rescue'] : null,
             'api' => isset($options['api']) ? $options['api'] : null,
             'route' => isset($options['route']) ? $options['route'] : null,
