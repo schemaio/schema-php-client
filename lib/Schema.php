@@ -5,9 +5,9 @@ if (!function_exists('json_decode')) {
 }
 
 $basedir = dirname(__FILE__);
-require_once($basedir.'/Schema/Cache.php');
-require_once($basedir.'/Schema/Client.php');
-require_once($basedir.'/Schema/Connection.php');
-require_once($basedir.'/Schema/Resource.php');
-require_once($basedir.'/Schema/Collection.php');
-require_once($basedir.'/Schema/Record.php');
+require_once($basedir.'/Cache.php');
+require_once($basedir.'/Client.php');
+require_once($basedir.'/Connection.php');
+require_once($basedir.'/Resource.php');
+require_once($basedir.'/Collection.php');
+require_once($basedir.'/Record.php');
