@@ -32,7 +32,11 @@ class Client
     public static $default_host = "api.schema.io";
 
     /**
-     * Default rescue server host
+     * @static int
+     */
+    public static $default_port = 8443;
+
+    /**
      * @static string
      */
     public static $default_rescue_host = "rescue.api.schema.io";
@@ -40,12 +44,7 @@ class Client
     /**
      * @static int
      */
-    public static $default_port = 8443;
-
-    /**
-     * @static int
-     */
-    public static $default_rescue_port = 8911;
+    public static $default_rescue_port = 8443;
 
     /**
      * @param  string $client_id
@@ -76,15 +75,16 @@ class Client
                 $client_key = $options['key'];
             }
         }
-
-        if (isset($options['session']) && $options['session']) {
-            $options['session'] = session_id();
+        if (!isset($options['session']) || $options['session']) {
+            if (!is_string($options['session'])) {
+                $options['session'] = session_id();
+            }
         }
         if (isset($options['rescue']) && $options['rescue'] !== false) {
             $options['rescue'] = array(
-                'host' => isset($options['rescue']['host'])
+                'host' => isset($options['rescue']['host']) && $options['rescue']['host']
                     ? $options['rescue']['host'] : self::$default_rescue_host,
-                'port' => isset($options['rescue']['port'])
+                'port' => isset($options['rescue']['port']) && $options['rescue']['port']
                     ? $options['rescue']['port'] : self::$default_rescue_port
             );
         }
@@ -95,7 +95,7 @@ class Client
             'port' => isset($options['port']) ? $options['port'] : self::$default_port,
             'verify_cert' => isset($options['verify_cert']) ? $options['verify_cert'] : true,
             'version' => isset($options['version']) ? $options['version'] : 1,
-            'session' =>isset($options['session']) ? $options['session'] : null,
+            'session' => isset($options['session']) ? $options['session'] : null,
             'rescue' => isset($options['rescue']) ? $options['rescue'] : null,
             'api' => isset($options['api']) ? $options['api'] : null,
             'route' => isset($options['route']) ? $options['route'] : null,
@@ -148,11 +148,9 @@ class Client
                 $this->server->connect();
             }
             $result = $this->server->request($method, array($url, $data));
-        } catch (\Exception $e) {
-            $this->request_rescue($e, array(
-                'method' => $method,
-                'url' => $url
-            ));
+        } catch (NetworkException $e) {
+            $this->request_rescue($e);
+            $result = $this->server->request($method, array($url, $data));
         }
 
         if (isset($result['$auth'])) {
@@ -169,52 +167,29 @@ class Client
     }
 
     /**
-     * Request from the rescue server
+     * Request from a rescue server
      *
-     * @param  string $method
-     * @param  string $url
-     * @param  array $data
-     * @return mixed
+     * @param  Exception
+     * @return void
      */
-    protected function request_rescue($e, $params)
+    protected function request_rescue($e)
     {
-        if (!$e) {
-            return;
-        }
-        if (isset($this->params['is_rescue'])) {
-            // TODO: cache exceptions until rescue server responds
-            return;
-        }
-        if ($this->params['rescue'] && $this->params['client_id'] && $this->params['client_key']) {
 
-            if (!$this->rescue) {
-                $this->rescue = new Client(
-                    $this->params['client_id'],
-                    $this->params['client_key'],
-                    $this->params['rescue']
-                );
-                $this->rescue->params(array('is_rescue' => true));
-            }
-
-            $last_request_id = $this->server->request_id() ?: $this->server->request_id(true);
-
-            $result = $this->rescue->post("/rescue.exceptions", array(
-                'type' => end(explode('\\', get_class($e))),
-                'message' => $e->getMessage(),
-                'request' => array(
-                    'id' => $last_request_id,
-                    'params' => $params
-                )
-            ));
-
-            if ($result) {
-                $e_message = "(System alerted with Exception ID: {$result['id']})";
-                $e_class = get_class($e);
-                throw new $e_class($e->getMessage().' '.$e_message, $e->getCode(), $e);
+        if ($this->params['rescue']
+         && $this->params['client_id']
+         && $this->params['client_key']) {
+            if ($this->params['rescued']) {
+                throw $e; // Prevent recursion
+            } else {
+                $this->params(array('rescued' => true));
+                $this->server = new Connection(array(
+                    'host' => $this->params['rescue']['host'],
+                    'port' => $this->params['rescue']['port'],
+                    'verify_cert' => $this->params['verify_cert']
+                ));
+                $this->server->connect();
             }
         }
-
-        throw $e;
     }
 
     /**
@@ -225,7 +200,7 @@ class Client
      */
     protected function request_proxy_data($data)
     {
-        if (property_exists($this, 'is_rescue') && $this->is_rescue) {
+        if (isset($this->params['rescued'])) {
             return $data;
         }
 
@@ -404,11 +379,9 @@ class Client
         
         try {
             return $this->server->request('auth', array($creds));
-        } catch (\Exception $e) {
-            $this->request_rescue($e, array(
-                'method' => 'auth',
-                'data' => $creds
-            ));
+        } catch (NetworkException $e) {
+            $this->request_rescue($e);
+            return $this->auth();
         }
     }
 }
