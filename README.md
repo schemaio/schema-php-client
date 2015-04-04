@@ -1,8 +1,8 @@
 ## Schema API Client for PHP
 
-*Schema is the API-centric platform to build and scale ecommerce.*
+*Schema is the platform to build and scale ecommerce.*
 
-Create an account at https://schema.io
+Create a free account at https://schema.io
 
 ## Usage example
 
@@ -10,7 +10,7 @@ Create an account at https://schema.io
 
 	$client = new Schema\Client('your_client_id', 'your_secret_key');
 
-	$products = $client->get('/products', ['categories' => ['id1', 'id2]]);
+	$products = $client->get('/categories/shoes/products', array('color' => 'blue'));
 
 	print_r($products);
 
