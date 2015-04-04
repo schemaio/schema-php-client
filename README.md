@@ -9,7 +9,9 @@ Build and scale ecommerce with Schema. Create a free account at https://schema.i
 
 	$client = new Schema\Client('your_client_id', 'your_secret_key');
 
-	$products = $client->get('/categories/shoes/products', array('color' => 'blue'));
+	$products = $client->get('/categories/shoes/products', array(
+		'color' => 'blue'
+	));
 
 	print_r($products);
 ```
