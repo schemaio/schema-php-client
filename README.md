@@ -5,15 +5,15 @@ Build and scale ecommerce with Schema. Create a free account at https://schema.i
 ## Example
 
 ```php
-	<?php require_once("/path/to/schema-php-client/lib/Schema.php");
+<?php require_once("/path/to/schema-php-client/lib/Schema.php");
 
-	$client = new Schema\Client('your_client_id', 'your_secret_key');
+$client = new Schema\Client('your_client_id', 'your_secret_key');
 
-	$products = $client->get('/categories/shoes/products', array(
-		'color' => 'blue'
-	));
+$products = $client->get('/categories/shoes/products', array(
+	'color' => 'blue'
+));
 
-	print_r($products);
+print_r($products);
 ```
 
 ## Documentation
