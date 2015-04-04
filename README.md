@@ -1,10 +1,8 @@
 ## Schema API Client for PHP
 
-*Schema is the platform to build and scale ecommerce.*
+Build and scale ecommerce with Schema. Create a free account at https://schema.io
 
-Create a free account at https://schema.io
-
-## Usage example
+## Example
 
 	<?php require_once("/path/to/schema-php-client/lib/Schema.php");
 
