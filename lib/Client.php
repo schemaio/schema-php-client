@@ -212,12 +212,12 @@ class Client
             'port' => $this->params['port']
         );
         if (is_array($this->params['proxy'])) {
-            $this->server->options['clear'] = true;
-            $this->server->options['port'] = 8880;
-            $this->server->host = isset($this->params['proxy']['host'])
+            $this->server->options['clear'] = isset($this->params['proxy']['clear'])
+                ? $this->params['proxy']['clear'] : false;
+            $this->server->options['host'] = isset($this->params['proxy']['host'])
                 ? $this->params['proxy']['host'] : $this->params['host'];
-            $this->server->port = isset($this->params['proxy']['port'])
-                ? $this->params['proxy']['port']: $this->params['port'];
+            $this->server->options['port'] = isset($this->params['proxy']['port'])
+                ? $this->params['proxy']['port'] : $this->params['port'];
         }
         if ($this->params['cache'] && !$this->cache) {
             $client_id = $data['$proxy']['client'];
