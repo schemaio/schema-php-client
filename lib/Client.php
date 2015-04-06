@@ -98,7 +98,7 @@ class Client
             'session' => isset($options['session']) ? $options['session'] : null,
             'rescue' => isset($options['rescue']) ? $options['rescue'] : null,
             'api' => isset($options['api']) ? $options['api'] : null,
-            'route' => isset($options['route']) ? $options['route'] : null,
+            'route' => isset($options['route']['client']) ? $options['route'] : null,
             'proxy' => isset($options['proxy']) ? $options['proxy'] : null,
             'cache' => isset($options['cache']) ? $options['cache'] : null
         );
@@ -205,7 +205,7 @@ class Client
         }
 
         $data['$proxy'] = array(
-            'client' => $this->params['route']
+            'client' => isset($this->params['route']['client'])
                 ? $this->params['route']['client']
                 : $this->params['client_id'],
             'host' => $this->params['host'],
@@ -365,7 +365,7 @@ class Client
         if ($this->params['session']) {
             $creds['$session'] = $this->params['session'];
         }
-        if ($this->params['route']) {
+        if (isset($this->params['route']['client'])) {
             $creds['$route'] = $this->params['route'];
         }
         if ($ip_address = $_SERVER['REMOTE_ADDR']) {
