@@ -67,7 +67,7 @@ class Connection
         $this->host = $this->options['host'];
         $this->port = $this->options['port'];
         
-        if ($this->options['clear']) {
+        if (isset($this->options['clear']) && $this->options['clear']) {
             $this->stream = stream_socket_client(
                 "tcp://{$this->host}:{$this->port}", $error, $error_msg, 10
             );

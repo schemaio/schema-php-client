@@ -368,7 +368,7 @@ class Client
         if (isset($this->params['route']['client'])) {
             $creds['$route'] = $this->params['route'];
         }
-        if ($ip_address = $_SERVER['REMOTE_ADDR']) {
+        if (isset($_SERVER['REMOTE_ADDR']) && $ip_address = $_SERVER['REMOTE_ADDR']) {
             $creds['$ip'] = $ip_address;
         }
         if ($this->params['cache'] && !$this->cache) {
