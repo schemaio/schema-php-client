@@ -38,6 +38,11 @@ class Connection
     protected $stream;
 
     /**
+     * @var string
+     */
+    protected $last_request;
+
+    /**
      * @var int
      */
     protected $last_request_id;
@@ -58,7 +63,7 @@ class Connection
     }
 
     /**
-     * Activate the connection
+     * Connect to server
      *
      * @return void
      */
@@ -81,7 +86,6 @@ class Connection
                 $options['ssl']['verify_peer'] = true;
                 $options['ssl']['verify_depth'] = 5;
                 $options['ssl']['cafile'] = \dirname(\dirname(__FILE__)).'/data/ca-certificates.crt';
-
             }
             $context = stream_context_create($options);
             $this->stream = stream_socket_client(
@@ -98,10 +102,12 @@ class Connection
                 ."(Error:{$error} {$error_msg})"
             );
         }
+
+        stream_set_blocking($this->stream, false);
     }
 
     /**
-     * Request a server method
+     * Initiate request
      *
      * @param  string $method
      * @param  array $args
@@ -109,17 +115,12 @@ class Connection
      */
     public function request($method, $args = array())
     {
-        if (!$this->stream) {
-            throw new NetworkException("Unable to execute '{$method}' (Error: Connection closed)");
-        }
-
         $this->request_write($method, $args);
-
         return $this->request_response();
     }
 
     /**
-     * Write a server request
+     * Write request to stream
      *
      * @param  string $method
      * @param  array $args
@@ -127,31 +128,53 @@ class Connection
     private function request_write($method, $args)
     {
         $req_id = $this->request_id(true);
-        $request = array($req_id, $method, $args);
-        fwrite($this->stream, json_encode($request)."\n");
+        $request = json_encode(array($req_id, $method, $args))."\n";
+        $this->last_request = $request;
+        if (!$this->stream) {
+            $desc = $this->request_description();
+            throw new NetworkException("Unable to execute request ({$desc}): Connection closed");
+        }
+        for ($written = 0; $written < strlen($request); $written += $fwrite) {
+            $fwrite = fwrite($this->stream, substr($request, $written));
+            if ($fwrite === false) {
+                break;
+            }
+        }
         $this->request_count++;
     }
 
     /**
-     * Get a server response
+     * Get server response
      *
      * @return mixed
      */
     private function request_response()
     {
-        // Block until server responds
-        if (false === ($response = fgets($this->stream))) {
+        $response = '';
+        while (true) {
+            $buffer = fgets($this->stream);
+            $response .= $buffer;
+            if (strstr($buffer, "\n")) {
+                break;
+            } else {
+                usleep(1000);
+            }
+        }
+
+        $message = '';
+        if (!$response) {
             $this->close();
-            throw new ProtocolException("Unable to read response from server");
-        }
-
-        if (null === ($message = json_decode(trim($response), true))) {
-            throw new ProtocolException("Unable to parse response from server ({$response})");
+            $desc = $this->request_description();
+            throw new ProtocolException("Unable to read response from server ({$desc})");
+        } else if (null === ($message = json_decode(trim($response), true))) {
+            $desc = $this->request_description();
+            throw new ProtocolException("Unable to parse response from server ({$desc}): {$response}");
         } else if (!is_array($message) || !is_array($message[1])) {
-            throw new ProtocolException("Invalid response from server (".json_encode($message).")");
+            $desc = $this->request_description();
+            throw new ProtocolException("Invalid response from server ({$desc}): ".json_encode($message));
         }
 
-        $id = $message[0]; // Not used since response is blocking
+        $id = $message[0];
         $data = $message[1];
 
         if (isset($data['$error'])) {
@@ -165,18 +188,29 @@ class Connection
     }
 
     /**
-     * Get or create a unique request identifier
+     * Get or reset unique request identifier
      *
      * @param  bool $reset
      * @return string
      */
-    function request_id($reset = false)
+    public function request_id($reset = false)
     {
         if ($reset) {
             $hash_id = openssl_random_pseudo_bytes(32);
             $this->last_request_id = md5($hash_id);
         }
         return $this->last_request_id;
+    }
+
+    /**
+     * Get description of last request
+     *
+     * @return string
+     */
+    private function request_description()
+    {
+        $request = json_decode(trim($this->last_request), true);
+        return strtoupper($request[1]).' '.$request[2][0];
     }
 
     /**
