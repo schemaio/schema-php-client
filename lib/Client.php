@@ -109,11 +109,6 @@ class Client
             'cache' => isset($options['cache']) ? $options['cache'] : null
         );
 
-        if ($this->params['cache']) {
-            $client_id = isset($this->params['route']['client']) ? $this->params['route']['client'] : $client_id;
-            $this->cache = new Cache($client_id, $this->params['cache']);
-        }
-
         $this->server = new Connection(array(
             'host' => $this->params['host'],
             'port' => $this->params['port'],
@@ -150,6 +145,11 @@ class Client
     {
         $url = (string)$url;
         $data = array('$data' => $data);
+
+        if (!$this->cache && $this->params['cache']) {
+            $client_id = isset($this->params['route']['client']) ? $this->params['route']['client'] : $client_id;
+            $this->cache = new Cache($client_id, $this->params['cache']);
+        }
 
         try {
             if (!$this->server->connected) {
