@@ -22,6 +22,11 @@ class Client
     protected $session;
 
     /**
+     * @var bool
+     */
+    protected $authed;
+
+    /**
      * @var Cache
      */
     public $cache;
@@ -88,6 +93,7 @@ class Client
                     ? $options['rescue']['port'] : self::$default_rescue_port
             );
         }
+
         $this->params = array(
             'client_id' => $client_id,
             'client_key' => $client_key,
@@ -102,6 +108,11 @@ class Client
             'proxy' => isset($options['proxy']) ? $options['proxy'] : null,
             'cache' => isset($options['cache']) ? $options['cache'] : null
         );
+
+        if ($this->params['cache']) {
+            $client_id = isset($this->params['route']['client']) ? $this->params['route']['client'] : $client_id;
+            $this->cache = new Cache($client_id, $this->params['cache']);
+        }
 
         $this->server = new Connection(array(
             'host' => $this->params['host'],
@@ -158,7 +169,6 @@ class Client
                 // Connection ended, retry
                 return $this->request($method, $url, $data['$data']);
             } else {
-                $this->authed = true;
                 $result = $this->auth($result['$auth']);
             }
         }
@@ -218,11 +228,6 @@ class Client
                 ? $this->params['proxy']['host'] : $this->params['host'];
             $this->server->options['port'] = isset($this->params['proxy']['port'])
                 ? $this->params['proxy']['port'] : $this->params['port'];
-        }
-        if ($this->params['cache'] && !$this->cache) {
-            $client_id = $data['$proxy']['client'];
-            $this->cache = new Cache($client_id, $this->params['cache']);
-            $data['$cached'] = $this->cache->get_versions();
         }
 
         return $data;
@@ -335,10 +340,13 @@ class Client
      * Call AUTH method
      *
      * @param  string $nonce
+     * @param  array $params
      * @return mixed
      */
-    public function auth($nonce = null)
+    public function auth($nonce = null, $params = null)
     {
+        $params = $params ?: array();
+
         $client_id = $this->params['client_id'];
         $client_key = $this->params['client_key'];
 
@@ -351,34 +359,33 @@ class Client
         // 3) Create auth key
         $auth_key = md5("{$nonce}{$client_id}{$key_hash}");
 
-        // 4) Authenticate with client creds and options
-        $creds = array(
-            'client' => $client_id,
-            'key' => $auth_key
-        );
+        // 4) Authenticate with client params
+        $params['client'] = $client_id;
+        $params['key'] = $auth_key;
+
         if ($this->params['version']) {
-            $creds['$v'] = $this->params['version'];
+            $params['$v'] = $this->params['version'];
         }
         if ($this->params['api']) {
-            $creds['$api'] = $this->params['api'];
+            $params['$api'] = $this->params['api'];
         }
         if ($this->params['session']) {
-            $creds['$session'] = $this->params['session'];
+            $params['$session'] = $this->params['session'];
         }
         if (isset($this->params['route']['client'])) {
-            $creds['$route'] = $this->params['route'];
+            $params['$route'] = $this->params['route'];
         }
         if (isset($_SERVER['REMOTE_ADDR']) && $ip_address = $_SERVER['REMOTE_ADDR']) {
-            $creds['$ip'] = $ip_address;
+            $params['$ip'] = $ip_address;
         }
-        if ($this->params['cache'] && !$this->cache) {
-            $client_id = isset($creds['$route']['client']) ? $creds['$route']['client'] : $client_id;
-            $this->cache = new Cache($client_id, $this->params['cache']);
-            $creds['$cached'] = $this->cache->get_versions();
+        if ($this->cache) {
+            $params['$cached'] = $this->cache->get_versions();
         }
+
+        $this->authed = true;
         
         try {
-            return $this->server->request('auth', array($creds));
+            return $this->server->request('auth', array($params));
         } catch (NetworkException $e) {
             $this->request_rescue($e);
             return $this->auth();

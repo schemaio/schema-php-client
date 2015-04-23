@@ -210,7 +210,11 @@ class Connection
     private function request_description()
     {
         $request = json_decode(trim($this->last_request), true);
-        return strtoupper($request[1]).' '.$request[2][0];
+        $desc = strtoupper($request[1]);
+        if (isset($request[2][0])) {
+            $desc .= ' '.json_encode($request[2][0]);
+        }
+        return $desc;
     }
 
     /**
