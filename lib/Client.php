@@ -156,6 +156,11 @@ class Client
                 if ($this->params['proxy']) {
                     $data = $this->request_proxy_data($data);
                 }
+                if (!$this->authed) {
+                    $data['$client'] = isset($this->params['route']['client'])
+                        ? $this->params['route']['client']
+                        : $this->params['client_id'];
+                }
                 $this->server->connect();
             }
             $result = $this->server->request($method, array($url, $data));
