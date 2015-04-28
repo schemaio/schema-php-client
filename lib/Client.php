@@ -271,7 +271,7 @@ class Client
             if (is_array($result['$data'])) {
                 if (!isset($result['$url'])) {
                     // Default resource url
-                    if ($method === 'post') {
+                    if ($method === 'post' && isset($result['$data']['id'])) {
                         $url = rtrim($url, '/').'/'.$result['$data']['id'];
                     }
                     $result['$url'] = $url;

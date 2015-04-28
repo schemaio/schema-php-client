@@ -102,8 +102,6 @@ class Connection
                 ."(Error:{$error} {$error_msg})"
             );
         }
-
-        stream_set_blocking($this->stream, false);
     }
 
     /**
@@ -134,12 +132,17 @@ class Connection
             $desc = $this->request_description();
             throw new NetworkException("Unable to execute request ({$desc}): Connection closed");
         }
+
+        // Must block while writing
+        stream_set_blocking($this->stream, true);
+
         for ($written = 0; $written < strlen($request); $written += $fwrite) {
             $fwrite = fwrite($this->stream, substr($request, $written));
             if ($fwrite === false) {
                 break;
             }
         }
+
         $this->request_count++;
     }
 
@@ -150,6 +153,9 @@ class Connection
      */
     private function request_response()
     {
+        // Must not block while reading
+        stream_set_blocking($this->stream, false);
+        
         $response = '';
         while (true) {
             $buffer = fgets($this->stream);
