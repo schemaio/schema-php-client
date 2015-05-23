@@ -153,6 +153,16 @@ class Resource extends \ArrayIterator
     }
 
     /**
+     * Get link data for this resource
+     *
+     * @return array
+     */
+    public function & link_data()
+    {
+        return $this->link_data;
+    }
+
+    /**
      * Get original request headers for this resource
      *
      * @return array
@@ -161,6 +171,80 @@ class Resource extends \ArrayIterator
     {
         return $this->headers;
     }
+
+    /**
+     * Execute a GET request on this resource
+     *
+     * @param  mixed $scope
+     * @param  mixed $data
+     * @return mixed
+     */
+    public function get($scope = null, $data = null)
+    {
+        return $this->request('get', $scope, $data);
+    }
+
+    /**
+     * Execute a PUT request on this resource
+     *
+     * @param  mixed $scope
+     * @param  mixed $data
+     * @return mixed
+     */
+    public function put($scope = null, $data = null)
+    {
+        return $this->request('put', $scope, $data);
+    }
+
+    /**
+     * Execute a POST request on this resource
+     *
+     * @param  mixed $scope
+     * @param  mixed $data
+     * @return mixed
+     */
+    public function post($scope = null, $data = null)
+    {
+        return $this->request('post', $scope, $data);
+    }
+
+    /**
+     * Execute a DELETE request on this resource
+     *
+     * @param  mixed $scope
+     * @param  mixed $data
+     * @return mixed
+     */
+    public function delete($scope = null, $data = null)
+    {
+        return $this->request('delete', $scope, $data);
+    }
+
+    /**
+     * Execute a request on this resource
+     *
+     * @param  mixed $scope
+     * @param  mixed $data
+     * @return mixed
+     */
+    public function request($method, $scope = null, $data = null)
+    {
+        if (is_array($scope)) {
+            $data = $scope;
+            $scope = null;
+        }
+        $url = $scope ? $this->url.'/'.ltrim($scope, '/') : $this->url;
+        $result = self::$client->request($method, $url, $data);
+        if (!$scope && $result instanceof Resource) {
+            // TODO: how should POST be handled here?
+            foreach ($result->data() as $key => $value) {
+                self::offsetSet($key, $value);
+            }
+        }
+        return $scope ? $result : $this;
+    }
+
+
 
     /**
      * Dump the contents of this resource
