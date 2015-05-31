@@ -129,6 +129,24 @@ class Collection extends Resource
     {
         return $this->getArrayCopy();
     }
+
+    /**
+     * Get collection data
+     *
+     * @param  bool $raw
+     * @return mixed
+     */
+    public function data($raw = false)
+    {
+        $data = array(
+            'count' => $this->count,
+            'results' => parent::data($raw),
+            'pages' => $this->pages,
+            'page' => $this->page
+        );
+
+        return $data;
+    }
     
     /**
      * Dump raw collection values
