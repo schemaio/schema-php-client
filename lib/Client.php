@@ -165,10 +165,10 @@ class Client
                 }
                 $this->server->connect();
             }
-            $result = $this->server->request($method, array($url, $data));
+            $result = $this->server->request($method, $url, $data);
         } catch (NetworkException $e) {
             $this->request_rescue($e);
-            $result = $this->server->request($method, array($url, $data));
+            $result = $this->server->request($method, $url, $data);
         }
 
         if (isset($result['$auth'])) {
@@ -392,7 +392,7 @@ class Client
         $this->authed = true;
         
         try {
-            return $this->server->request('auth', array($params));
+            return $this->server->request('auth', $params);
         } catch (NetworkException $e) {
             $this->request_rescue($e);
             return $this->auth();

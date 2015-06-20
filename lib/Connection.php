@@ -45,11 +45,6 @@ class Connection
     /**
      * @var int
      */
-    protected $last_request_id;
-
-    /**
-     * @var int
-     */
     public $request_count = 0;
 
     /**
@@ -111,22 +106,20 @@ class Connection
      * @param  array $args
      * @return mixed
      */
-    public function request($method, $args = array())
+    public function request($method)
     {
-        $this->request_write($method, $args);
+        $this->request_write(func_get_args());
         return $this->request_response();
     }
 
     /**
      * Write request to stream
      *
-     * @param  string $method
      * @param  array $args
      */
-    private function request_write($method, $args)
+    private function request_write($args)
     {
-        $req_id = $this->request_id(true);
-        $request = json_encode(array($req_id, $method, $args))."\n";
+        $request = json_encode($args)."\n";
         $this->last_request = $request;
         if (!$this->stream) {
             $desc = $this->request_description();
@@ -167,21 +160,18 @@ class Connection
             }
         }
 
-        $message = '';
+        $data = '';
         if (!$response) {
             $this->close();
             $desc = $this->request_description();
             throw new ProtocolException("Unable to read response from server ({$desc})");
-        } else if (null === ($message = json_decode(trim($response), true))) {
+        } else if (null === ($data = json_decode(trim($response), true))) {
             $desc = $this->request_description();
             throw new ProtocolException("Unable to parse response from server ({$desc}): {$response}");
-        } else if (!is_array($message) || !is_array($message[1])) {
+        } else if (!is_array($data)) {
             $desc = $this->request_description();
-            throw new ProtocolException("Invalid response from server ({$desc}): ".json_encode($message));
+            throw new ProtocolException("Invalid response from server ({$desc}): ".json_encode($data));
         }
-
-        $id = $message[0];
-        $data = $message[1];
 
         if (isset($data['$error'])) {
             throw new ServerException((string)$data['$error']);
@@ -194,21 +184,6 @@ class Connection
     }
 
     /**
-     * Get or reset unique request identifier
-     *
-     * @param  bool $reset
-     * @return string
-     */
-    public function request_id($reset = false)
-    {
-        if ($reset) {
-            $hash_id = openssl_random_pseudo_bytes(32);
-            $this->last_request_id = md5($hash_id);
-        }
-        return $this->last_request_id;
-    }
-
-    /**
      * Get description of last request
      *
      * @return string
@@ -216,9 +191,9 @@ class Connection
     private function request_description()
     {
         $request = json_decode(trim($this->last_request), true);
-        $desc = strtoupper($request[1]);
-        if (isset($request[2][0])) {
-            $desc .= ' '.json_encode($request[2][0]);
+        $desc = strtoupper($request[0]);
+        if (isset($request[1])) {
+            $desc .= ' '.json_encode($request[1]);
         }
         return $desc;
     }
