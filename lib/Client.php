@@ -81,7 +81,7 @@ class Client
             }
         }
         if (!isset($options['session']) || $options['session']) {
-            if (!is_string($options['session'])) {
+            if (isset($options['session']) && is_string($options['session'])) {
                 $options['session'] = session_id();
             }
         }
@@ -162,6 +162,13 @@ class Client
                     $data['$client'] = isset($this->params['route']['client'])
                         ? $this->params['route']['client']
                         : $this->params['client_id'];
+                    // Perform basic auth by default for secure/non-route based requests
+                    if (!isset($this->server->options['clear']) && !isset($this->params['route']['client'])) {
+                        $data['$key'] = $this->params['client_key'];
+                        if ($this->cache) {
+                            $data['$cached'] = $this->cache->get_versions();
+                        }
+                    }
                 }
                 $this->server->connect();
             }
