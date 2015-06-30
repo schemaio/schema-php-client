@@ -258,9 +258,14 @@ class Client
      */
     protected function response($method, $url, $data, $result)
     {
+        if (!isset($result['$url'])) {
+            $result['$url'] = $url;
+        }
         if ($this->cache) {
             $this->cache->clear($result);
-            $this->cache->put($url, $data, $result);
+            if (strtolower($method) === 'get') {
+                $this->cache->put($url, $data, $result);
+            }
         }
 
         return $this->response_data($result, $method, $url);
@@ -276,13 +281,6 @@ class Client
     {
         if (isset($result['$data'])) {
             if (is_array($result['$data'])) {
-                if (!isset($result['$url'])) {
-                    // Default resource url
-                    if ($method === 'post' && isset($result['$data']['id'])) {
-                        $url = rtrim($url, '/').'/'.$result['$data']['id'];
-                    }
-                    $result['$url'] = $url;
-                }
                 return Resource::instance($result, $this);
             }
             return $result['$data'];
