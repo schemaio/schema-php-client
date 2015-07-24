@@ -157,6 +157,16 @@ class Record extends Resource
             $this->offsetSet($field, $data_record);
             return $data_record;
         }
+        else if (!isset($data_value)) {
+            // Find object within array by id
+            $data = $this->getArrayCopy();
+            foreach ($data as $data_val) {
+                if (isset($data_val['id']) && $data_val['id'] === $field) {
+                    $data_value = $data_val;
+                    break;
+                }
+            }
+        }
 
         return $data_value;
     }
