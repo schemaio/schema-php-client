@@ -80,10 +80,11 @@ class Client
                 $client_key = $options['key'];
             }
         }
-        if (!isset($options['session']) || $options['session']) {
-            if (isset($options['session']) && is_string($options['session'])) {
-                $options['session'] = session_id();
+        if (!isset($options['session']) || $options['session'] === true) {
+            if (isset($options['session']) && $options['session'] === true && session_id() === '') {
+                session_start();
             }
+            $options['session'] = session_id();
         }
         if (isset($options['rescue']) && $options['rescue'] !== false) {
             $options['rescue'] = array(
@@ -167,6 +168,9 @@ class Client
                         $data['$key'] = $this->params['client_key'];
                         if ($this->cache) {
                             $data['$cached'] = $this->cache->get_versions();
+                        }
+                        if ($this->params['session']) {
+                            $data['$session'] = $this->params['session'];
                         }
                     }
                 }
