@@ -21,12 +21,13 @@ class Record extends Resource
      */
     public function offsetExists($index)
     {
-        if (!$exists = parent::offsetExists($index)) {
-            if ($this->links && (isset($this->links[$index]['url']) || $index === '$links')) {
+        if (!parent::offsetExists($index) || parent::offsetGet($index) === null) {
+            if (isset($this->links[$index]['url']) || $index === '$links') {
                 return true;
             }
+            return false;
         }
-        return $exists;
+        return true;
     }
 
     /**
