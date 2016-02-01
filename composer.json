@@ -18,7 +18,7 @@
 		"ext-json": "*"
 	},
 	"autoload": {
-		"classmap": ["lib/Schema/"]
+		"classmap": ["lib/"]
 	}
 
 }
