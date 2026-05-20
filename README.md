@@ -53,6 +53,16 @@ print_r($products);
 
 See <http://schema.io/docs/clients#php> for more API docs and usage examples
 
+## CA certificates
+
+TLS certificate verification uses the bundled Mozilla CA certificate store at
+`data/ca-certificates.crt` via `lib/Connection.php`. Keep this file current
+before publishing releases that may be used with `verify_cert` enabled.
+
+To update it, download the current PEM bundle from
+https://curl.se/docs/caextract.html and replace `data/ca-certificates.crt`,
+preserving the filename because it is referenced directly by the client.
+
 ## Contributing
 
 Pull requests are welcome
